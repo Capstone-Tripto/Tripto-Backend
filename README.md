@@ -21,7 +21,8 @@ tripto/
 │   ├── agent/            # AI 에이전트 관련 로직
 │   ├── api/              # API 엔드포인트 및 라우터 설정
 │   │   ├── __init__.py
-│   │   ├── api.py              
+│   │   ├── api.py
+|   |   ├── dependencies.py             
 │   │   └── v1/
 │   │       └── endpoints/
 │   │           ├── user.py       # 유저/친구 관련 API
