@@ -31,6 +31,7 @@ tripto/
 │   │           ├── chat.py       # 채팅 관련 API
 │   │           ├── notification.py # 알림 관련 API
 │   │           └── place.py      # 장소 검색 및 추천 장소 조회 API
+│   │           ├── info.py       # 앱 정보 관련 API
 │   ├── core/             # 공통 설정
 │   │   ├── __init__.py
 │   │   ├── config.py             # 환경 변수 (Pydantic Settings - API Keys, DB URL)
@@ -53,6 +54,7 @@ tripto/
 |   |   └── place_schemas.py
 │   ├── services/         # 비즈니스 로직 처리
 │   │   ├── user_services.py
+│   │   ├── friendship_services.py
 |   |   ├── plan_services.py
 |   |   ├── vote_services.py
 |   |   ├── chat_services.py
