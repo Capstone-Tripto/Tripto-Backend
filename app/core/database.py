@@ -1,33 +1,58 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from starlette.config import Config
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+from app.core.config import settings
+import redis.asyncio as aioredis
 
-config = Config('.env')
-SQLALCHEMY_DATABASE_URL = config('SQLALCHEMY_DATABASE_URL')
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=settings.APP_ENV == "development",
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
 
-# 동기 DB
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
-Base = declarative_base()
+class Base(DeclarativeBase): # DB 베이스 모델 
+    pass
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
+# Redis 관련 설정
+_redis: aioredis.Redis = None
 
-# 비동기 DB
-SQLALCHEMY_DATABASE_URL_ASYNC = config('SQLALCHEMY_DATABASE_URL_ASYNC')
-async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL_ASYNC)
+async def init_redis():
+    global _redis
+    if _redis is None:
+        _redis = aioredis.from_url(
+            settings.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True, # 가져온 데이터를 자동으로 문자열로 변환
+        )
 
-async def get_async_db():
-    db = AsyncSession(bind=async_engine, expire_on_commit=False)
-    try:
-        yield db
-    finally:
-        await db.close()
+async def close_redis():
+    global _redis
+    if _redis:
+        await _redis.aclose()
+        _redis = None
+
+async def get_redis() -> aioredis.Redis:
+    global _redis
+    if _redis is None:
+        await init_redis()
+    return _redis
