@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+
+from app.api import travel, schedule, memo
+
 app = FastAPI()
 
-@app.get("/test")
-def test():
-    return {"message": "테스트"}
+app.include_router(travel.router, prefix="/api")
+app.include_router(schedule.router, prefix="/api")
+app.include_router(memo.router, prefix="/api")
